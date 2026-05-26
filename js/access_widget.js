@@ -1,6 +1,7 @@
 /**
  * @file access_widget.js
  * Builds and wires up the Access Widget toolbar.
+ * Collapsed: small eye icon. Click to expand full panel. X to collapse.
  */
 
 (function (Drupal, drupalSettings) {
@@ -30,9 +31,7 @@
         drupalSettings.accessWidget || {}
       );
 
-      // ── Helper functions (defined first) ────────────────────────────────────
-
-      var body = document.body;
+      // ── Helper functions ─────────────────────────────────────────────────────
 
       function applyFontSize(size) {
         document.documentElement.style.fontSize = size + '%';
@@ -43,7 +42,7 @@
         document.body.classList.toggle('dark-mode', isDark);
       }
 
-      // ── Resolve initial values ──────────────────────────────────────────────
+      // ── Resolve initial values ────────────────────────────────────────────────
 
       var fontSize = cfg.fontSizeDefault;
       var darkMode = cfg.darkModeDefault === 'dark';
@@ -63,14 +62,23 @@
         }
       }
 
-      // ── Build widget HTML ───────────────────────────────────────────────────
+      // ── Build widget HTML ─────────────────────────────────────────────────────
 
       var widget = document.createElement('div');
       widget.id = 'access-widget';
-      widget.setAttribute('role', 'toolbar');
-      widget.setAttribute('aria-label', Drupal.t('Accessibility controls'));
 
-      var html = '';
+      // ── Trigger button (collapsed state) ──────────────────────────────────────
+      var html = '<button class="access-widget__trigger"'
+        + ' aria-label="' + Drupal.t('Open accessibility controls') + '"'
+        + ' aria-expanded="false"'
+        + ' title="' + Drupal.t('Accessibility controls') + '">'
+        + '&#x1F441;&#xFE0F;'   // 👁️
+        + '</button>';
+
+      // ── Panel (expanded state) ────────────────────────────────────────────────
+      html += '<div class="access-widget__panel"'
+        + ' role="toolbar"'
+        + ' aria-label="' + Drupal.t('Accessibility controls') + '">';
 
       if (cfg.enableFontSize) {
         html +=
@@ -98,14 +106,25 @@
             ' aria-label="' + Drupal.t('Toggle dark mode') + '"' +
             ' aria-pressed="' + darkMode + '"' +
             ' title="' + Drupal.t('Toggle dark mode') + '">' +
-            '<span class="access-widget__icon access-widget__icon--sun"  aria-hidden="true">☀️</span>' +
-            '<span class="access-widget__icon access-widget__icon--moon" aria-hidden="true">🌙</span>' +
+            '<span class="access-widget__icon access-widget__icon--sun"  aria-hidden="true">&#x2600;&#xFE0F;</span>' +
+            '<span class="access-widget__icon access-widget__icon--moon" aria-hidden="true">&#x1F319;</span>' +
           '</button>';
       }
 
+      // Divider + Close button
+      if (cfg.enableFontSize || cfg.enableDarkMode) {
+        html += '<span class="access-widget__divider" aria-hidden="true"></span>';
+      }
+      html +=
+        '<button class="access-widget__btn access-widget__btn--close"' +
+          ' aria-label="' + Drupal.t('Close accessibility controls') + '"' +
+          ' title="' + Drupal.t('Close') + '">&#x2715;</button>';  // ✕
+
+      html += '</div>'; // end .access-widget__panel
+
       widget.innerHTML = html;
 
-      // ── Position (fixed) ────────────────────────────────────────────────────
+      // ── Position (fixed) ──────────────────────────────────────────────────────
 
       widget.style.position = 'fixed';
       widget.style.zIndex   = '9999';
@@ -119,14 +138,29 @@
       if (pos.indexOf('left')   !== -1) { widget.style.left   = ox + 'px'; }
       if (pos.indexOf('right')  !== -1) { widget.style.right  = ox + 'px'; }
 
-      body.appendChild(widget);
+      document.body.appendChild(widget);
 
-      // ── Apply initial state ─────────────────────────────────────────────────
+      // ── Apply initial dark mode / font size ───────────────────────────────────
 
       applyFontSize(fontSize);
       applyDarkMode(darkMode);
 
-      // ── Font size listeners ─────────────────────────────────────────────────
+      // ── Collapse / Expand ─────────────────────────────────────────────────────
+
+      var trigger  = widget.querySelector('.access-widget__trigger');
+      var btnClose = widget.querySelector('.access-widget__btn--close');
+
+      trigger.addEventListener('click', function () {
+        widget.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+      });
+
+      btnClose.addEventListener('click', function () {
+        widget.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+      });
+
+      // ── Font size listeners ───────────────────────────────────────────────────
 
       if (cfg.enableFontSize) {
         var btnDec   = widget.querySelector('.access-widget__btn--decrease');
@@ -166,7 +200,7 @@
         });
       }
 
-      // ── Dark mode listener ──────────────────────────────────────────────────
+      // ── Dark mode listener ────────────────────────────────────────────────────
 
       if (cfg.enableDarkMode) {
         var btnDark = widget.querySelector('.access-widget__btn--darkmode');
