@@ -30,6 +30,18 @@
         drupalSettings.accessWidget || {}
       );
 
+      // ── Helper functions (defined first) ────────────────────────────────────
+
+      var body = document.body;
+
+      function applyFontSize(size) {
+        document.documentElement.style.fontSize = size + '%';
+      }
+
+      function applyDarkMode(isDark) {
+        body.classList.toggle('dark-mode', isDark);
+      }
+
       // ── Resolve initial values ──────────────────────────────────────────────
 
       var fontSize = cfg.fontSizeDefault;
@@ -106,7 +118,7 @@
       if (pos.indexOf('left')   !== -1) { widget.style.left   = ox + 'px'; }
       if (pos.indexOf('right')  !== -1) { widget.style.right  = ox + 'px'; }
 
-      document.body.appendChild(widget);
+      body.appendChild(widget);
 
       // ── Apply initial state ─────────────────────────────────────────────────
 
@@ -124,29 +136,33 @@
         btnDec.addEventListener('click', function () {
           if (fontSize > cfg.fontSizeMin) {
             fontSize = Math.max(cfg.fontSizeMin, fontSize - cfg.fontSizeStep);
-            updateFontSize();
+            label.textContent = fontSize + '%';
+            applyFontSize(fontSize);
+            if (cfg.persistPrefs) {
+              localStorage.setItem('accessWidget_fontSize', fontSize);
+            }
           }
         });
 
         btnInc.addEventListener('click', function () {
           if (fontSize < cfg.fontSizeMax) {
             fontSize = Math.min(cfg.fontSizeMax, fontSize + cfg.fontSizeStep);
-            updateFontSize();
+            label.textContent = fontSize + '%';
+            applyFontSize(fontSize);
+            if (cfg.persistPrefs) {
+              localStorage.setItem('accessWidget_fontSize', fontSize);
+            }
           }
         });
 
         btnReset.addEventListener('click', function () {
           fontSize = cfg.fontSizeDefault;
-          updateFontSize();
-        });
-
-        function updateFontSize() {
           label.textContent = fontSize + '%';
           applyFontSize(fontSize);
           if (cfg.persistPrefs) {
             localStorage.setItem('accessWidget_fontSize', fontSize);
           }
-        }
+        });
       }
 
       // ── Dark mode listener ──────────────────────────────────────────────────
@@ -156,35 +172,20 @@
 
         btnDark.addEventListener('click', function () {
           darkMode = !darkMode;
-          applyDarkMode(darkMode);
-          btnDark.setAttribute('aria-pressed', darkMode);
+          body.classList.toggle('dark-mode', darkMode);
+          btnDark.setAttribute('aria-pressed', String(darkMode));
           if (cfg.persistPrefs) {
-            localStorage.setItem('accessWidget_darkMode', darkMode);
+            localStorage.setItem('accessWidget_darkMode', String(darkMode));
           }
         });
 
         // Keep in sync when OS preference changes (only if no saved preference).
-        if (cfg.darkModeDefault === 'system' && cfg.persistPrefs === false) {
+        if (cfg.darkModeDefault === 'system' && !cfg.persistPrefs) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
             darkMode = e.matches;
-            applyDarkMode(darkMode);
-            btnDark.setAttribute('aria-pressed', darkMode);
+            body.classList.toggle('dark-mode', darkMode);
+            btnDark.setAttribute('aria-pressed', String(darkMode));
           });
-        }
-      }
-
-      // ── Helpers ─────────────────────────────────────────────────────────────
-
-      function applyFontSize(size) {
-        document.documentElement.style.fontSize = size + '%';
-      }
-
-      function applyDarkMode(isDark) {
-        if (isDark) {
-          document.body.classList.add('dark-mode');
-        }
-        else {
-          document.body.classList.remove('dark-mode');
         }
       }
     }
