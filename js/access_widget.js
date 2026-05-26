@@ -185,7 +185,8 @@
         if (cfg.darkModeDefault === 'system' && !cfg.persistPrefs) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
             darkMode = e.matches;
-            body.classList.toggle('dark-mode', darkMode);
+            document.documentElement.classList.toggle('dark-mode', darkMode);
+            document.body.classList.toggle('dark-mode', darkMode);
             btnDark.setAttribute('aria-pressed', String(darkMode));
           });
         }
