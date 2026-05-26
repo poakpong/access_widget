@@ -72,7 +72,7 @@
         + ' aria-label="' + Drupal.t('Open accessibility controls') + '"'
         + ' aria-expanded="false"'
         + ' title="' + Drupal.t('Accessibility controls') + '">'
-        + '&#x1F441;&#xFE0F;'   // 👁️
+        + 'A+'   // White "A+" on black circle
         + '</button>';
 
       // ── Panel (expanded state) ────────────────────────────────────────────────

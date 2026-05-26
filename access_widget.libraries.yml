@@ -1,5 +1,5 @@
 access_widget:
-  version: 1.0.2
+  version: 1.0.3
   css:
     theme:
       css/access_widget.css: {}
