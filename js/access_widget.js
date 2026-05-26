@@ -1,14 +1,60 @@
 /**
  * @file access_widget.js
  * Builds and wires up the Access Widget toolbar.
- * Collapsed: small eye icon. Click to expand full panel. X to collapse.
+ * Collapsed: small "A+" button. Click to expand panel. X (or Esc) to close.
  */
 
 (function (Drupal, drupalSettings) {
   'use strict';
 
+  // ── Safe localStorage helpers ────────────────────────────────────────────────
+
+  function lsGet(key) {
+    try { return localStorage.getItem(key); }
+    catch (e) { return null; }
+  }
+
+  function lsSet(key, value) {
+    try { localStorage.setItem(key, value); }
+    catch (e) { /* quota / private browsing / blocked — ignore */ }
+  }
+
+  // ── DOM helpers (avoid innerHTML, no string concatenation of attributes) ─────
+
+  function el(tag, className, attrs) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (attrs) {
+      for (var k in attrs) {
+        if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+          node.setAttribute(k, attrs[k]);
+        }
+      }
+    }
+    return node;
+  }
+
+  function makeBtn(className, text, attrs) {
+    var btn = el('button', className, attrs);
+    btn.type = 'button';
+    if (text != null) btn.textContent = text;
+    return btn;
+  }
+
+  function makeSpan(className, text, attrs) {
+    var span = el('span', className, attrs);
+    if (text != null) span.textContent = text;
+    return span;
+  }
+
+  function makeIcon(className, ch) {
+    return makeSpan(className, ch, { 'aria-hidden': 'true' });
+  }
+
+  // ── Behavior ────────────────────────────────────────────────────────────────
+
   Drupal.behaviors.accessWidget = {
-    attach: function (context, settings) {
+    attach: function (context) {
       // Run only once on the full document.
       if (context !== document || document.getElementById('access-widget')) {
         return;
@@ -31,7 +77,7 @@
         drupalSettings.accessWidget || {}
       );
 
-      // ── Helper functions ─────────────────────────────────────────────────────
+      // ── State helpers ─────────────────────────────────────────────────────────
 
       function applyFontSize(size) {
         document.documentElement.style.fontSize = size + '%';
@@ -52,86 +98,115 @@
       }
 
       if (cfg.persistPrefs) {
-        var savedSize = localStorage.getItem('accessWidget_fontSize');
-        var savedDark = localStorage.getItem('accessWidget_darkMode');
+        var savedSize = lsGet('accessWidget_fontSize');
+        var savedDark = lsGet('accessWidget_darkMode');
+
         if (savedSize !== null) {
-          fontSize = parseInt(savedSize, 10);
+          var parsed = parseInt(savedSize, 10);
+          if (Number.isFinite(parsed)) {
+            fontSize = Math.max(cfg.fontSizeMin, Math.min(cfg.fontSizeMax, parsed));
+          }
         }
+
         if (savedDark !== null) {
           darkMode = savedDark === 'true';
         }
       }
 
-      // ── Build widget HTML ─────────────────────────────────────────────────────
+      // ── Build trigger (collapsed state) ───────────────────────────────────────
 
-      var widget = document.createElement('div');
-      widget.id = 'access-widget';
+      var trigger = makeBtn('access-widget__trigger', 'A+', {
+        'aria-label':    Drupal.t('Open accessibility controls'),
+        'aria-expanded': 'false',
+        'aria-controls': 'access-widget-panel',
+        'title':         Drupal.t('Accessibility controls')
+      });
 
-      // ── Trigger button (collapsed state) ──────────────────────────────────────
-      var html = '<button class="access-widget__trigger"'
-        + ' aria-label="' + Drupal.t('Open accessibility controls') + '"'
-        + ' aria-expanded="false"'
-        + ' title="' + Drupal.t('Accessibility controls') + '">'
-        + 'A+'   // White "A+" on black circle
-        + '</button>';
+      // ── Build panel (expanded state) ──────────────────────────────────────────
 
-      // ── Panel (expanded state) ────────────────────────────────────────────────
-      html += '<div class="access-widget__panel"'
-        + ' role="toolbar"'
-        + ' aria-label="' + Drupal.t('Accessibility controls') + '">';
+      var panel = el('div', 'access-widget__panel', {
+        'id':         'access-widget-panel',
+        'role':       'group',
+        'aria-label': Drupal.t('Accessibility controls')
+      });
+
+      var btnDec, btnInc, btnReset, sizeLabel, btnDark;
 
       if (cfg.enableFontSize) {
-        html +=
-          '<div class="access-widget__font-size" role="group" aria-label="' + Drupal.t('Font size') + '">' +
-            '<button class="access-widget__btn access-widget__btn--decrease"' +
-              ' aria-label="' + Drupal.t('Decrease font size') + '"' +
-              ' title="' + Drupal.t('Decrease font size') + '">A-</button>' +
-            '<span class="access-widget__size-label" aria-live="polite" aria-atomic="true">' + fontSize + '%</span>' +
-            '<button class="access-widget__btn access-widget__btn--reset"' +
-              ' aria-label="' + Drupal.t('Reset font size') + '"' +
-              ' title="' + Drupal.t('Reset font size') + '">A</button>' +
-            '<button class="access-widget__btn access-widget__btn--increase"' +
-              ' aria-label="' + Drupal.t('Increase font size') + '"' +
-              ' title="' + Drupal.t('Increase font size') + '">A+</button>' +
-          '</div>';
+        var fsGroup = el('div', 'access-widget__font-size', {
+          'role':       'group',
+          'aria-label': Drupal.t('Font size')
+        });
+
+        btnDec = makeBtn('access-widget__btn access-widget__btn--decrease', 'A-', {
+          'aria-label': Drupal.t('Decrease font size'),
+          'title':      Drupal.t('Decrease font size')
+        });
+
+        sizeLabel = makeSpan('access-widget__size-label', fontSize + '%', {
+          'aria-live':   'polite',
+          'aria-atomic': 'true'
+        });
+
+        btnReset = makeBtn('access-widget__btn access-widget__btn--reset', 'A', {
+          'aria-label': Drupal.t('Reset font size'),
+          'title':      Drupal.t('Reset font size')
+        });
+
+        btnInc = makeBtn('access-widget__btn access-widget__btn--increase', 'A+', {
+          'aria-label': Drupal.t('Increase font size'),
+          'title':      Drupal.t('Increase font size')
+        });
+
+        fsGroup.appendChild(btnDec);
+        fsGroup.appendChild(sizeLabel);
+        fsGroup.appendChild(btnReset);
+        fsGroup.appendChild(btnInc);
+        panel.appendChild(fsGroup);
       }
 
       if (cfg.enableFontSize && cfg.enableDarkMode) {
-        html += '<span class="access-widget__divider" aria-hidden="true"></span>';
+        panel.appendChild(makeSpan('access-widget__divider', null, { 'aria-hidden': 'true' }));
       }
 
       if (cfg.enableDarkMode) {
-        html +=
-          '<button class="access-widget__btn access-widget__btn--darkmode"' +
-            ' aria-label="' + Drupal.t('Toggle dark mode') + '"' +
-            ' aria-pressed="' + darkMode + '"' +
-            ' title="' + Drupal.t('Toggle dark mode') + '">' +
-            '<span class="access-widget__icon access-widget__icon--sun"  aria-hidden="true">&#x2600;&#xFE0F;</span>' +
-            '<span class="access-widget__icon access-widget__icon--moon" aria-hidden="true">&#x1F319;</span>' +
-          '</button>';
+        btnDark = makeBtn('access-widget__btn access-widget__btn--darkmode', null, {
+          'aria-label':   Drupal.t('Toggle dark mode'),
+          'aria-pressed': String(darkMode),
+          'title':        Drupal.t('Toggle dark mode')
+        });
+        btnDark.appendChild(makeIcon('access-widget__icon access-widget__icon--sun',  '☀️'));
+        btnDark.appendChild(makeIcon('access-widget__icon access-widget__icon--moon', '🌙'));
+        panel.appendChild(btnDark);
       }
 
-      // Divider + Close button
       if (cfg.enableFontSize || cfg.enableDarkMode) {
-        html += '<span class="access-widget__divider" aria-hidden="true"></span>';
+        panel.appendChild(makeSpan('access-widget__divider', null, { 'aria-hidden': 'true' }));
       }
-      html +=
-        '<button class="access-widget__btn access-widget__btn--close"' +
-          ' aria-label="' + Drupal.t('Close accessibility controls') + '"' +
-          ' title="' + Drupal.t('Close') + '">&#x2715;</button>';  // ✕
 
-      html += '</div>'; // end .access-widget__panel
+      var btnClose = makeBtn('access-widget__btn access-widget__btn--close', '✕', {
+        'aria-label': Drupal.t('Close accessibility controls'),
+        'title':      Drupal.t('Close')
+      });
+      panel.appendChild(btnClose);
 
-      widget.innerHTML = html;
+      // ── Assemble widget ───────────────────────────────────────────────────────
 
-      // ── Position (fixed) ──────────────────────────────────────────────────────
+      var widget = el('div', null, { 'id': 'access-widget' });
+      widget.appendChild(trigger);
+      widget.appendChild(panel);
+
+      // ── Position (fixed) — Number.isFinite so offset 0 works ─────────────────
 
       widget.style.position = 'fixed';
       widget.style.zIndex   = '9999';
 
       var pos = cfg.position || 'top-left';
-      var ox  = parseInt(cfg.offsetX, 10) || 20;
-      var oy  = parseInt(cfg.offsetY, 10) || 20;
+
+      var ox = parseInt(cfg.offsetX, 10);
+      if (!Number.isFinite(ox)) ox = 20;
+      var oy = parseInt(cfg.offsetY, 10);
+      if (!Number.isFinite(oy)) oy = 20;
 
       if (pos.indexOf('top')    !== -1) { widget.style.top    = oy + 'px'; }
       if (pos.indexOf('bottom') !== -1) { widget.style.bottom = oy + 'px'; }
@@ -140,96 +215,91 @@
 
       document.body.appendChild(widget);
 
-      // ── Apply initial dark mode / font size ───────────────────────────────────
+      // ── Apply initial dark mode / font size ──────────────────────────────────
 
       applyFontSize(fontSize);
       applyDarkMode(darkMode);
 
       // ── Collapse / Expand ─────────────────────────────────────────────────────
 
-      var trigger  = widget.querySelector('.access-widget__trigger');
-      var panel    = widget.querySelector('.access-widget__panel');
-      var btnClose = widget.querySelector('.access-widget__btn--close');
-
-      // Set initial state explicitly — bypasses any CSS specificity conflicts.
+      // Initial display — explicit inline styles win over any theme CSS.
       trigger.style.display = 'flex';
       panel.style.display   = 'none';
 
-      trigger.addEventListener('click', function () {
+      function openPanel() {
         trigger.style.display = 'none';
         panel.style.display   = 'flex';
         widget.classList.add('is-open');
         trigger.setAttribute('aria-expanded', 'true');
-      });
+        // Move focus into the panel for keyboard / screen reader users.
+        var firstFocusable = panel.querySelector('button');
+        if (firstFocusable) firstFocusable.focus();
+      }
 
-      btnClose.addEventListener('click', function () {
+      function closePanel() {
         panel.style.display   = 'none';
         trigger.style.display = 'flex';
         widget.classList.remove('is-open');
         trigger.setAttribute('aria-expanded', 'false');
+        // Return focus to the trigger so keyboard users don't get lost.
+        trigger.focus();
+      }
+
+      trigger.addEventListener('click', openPanel);
+      btnClose.addEventListener('click', closePanel);
+
+      // Esc anywhere inside the panel closes it.
+      panel.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.stopPropagation();
+          closePanel();
+        }
       });
 
-      // ── Font size listeners ───────────────────────────────────────────────────
+      // ── Font size listeners ──────────────────────────────────────────────────
 
       if (cfg.enableFontSize) {
-        var btnDec   = widget.querySelector('.access-widget__btn--decrease');
-        var btnInc   = widget.querySelector('.access-widget__btn--increase');
-        var btnReset = widget.querySelector('.access-widget__btn--reset');
-        var label    = widget.querySelector('.access-widget__size-label');
-
         btnDec.addEventListener('click', function () {
           if (fontSize > cfg.fontSizeMin) {
             fontSize = Math.max(cfg.fontSizeMin, fontSize - cfg.fontSizeStep);
-            label.textContent = fontSize + '%';
+            sizeLabel.textContent = fontSize + '%';
             applyFontSize(fontSize);
-            if (cfg.persistPrefs) {
-              localStorage.setItem('accessWidget_fontSize', fontSize);
-            }
+            if (cfg.persistPrefs) lsSet('accessWidget_fontSize', String(fontSize));
           }
         });
 
         btnInc.addEventListener('click', function () {
           if (fontSize < cfg.fontSizeMax) {
             fontSize = Math.min(cfg.fontSizeMax, fontSize + cfg.fontSizeStep);
-            label.textContent = fontSize + '%';
+            sizeLabel.textContent = fontSize + '%';
             applyFontSize(fontSize);
-            if (cfg.persistPrefs) {
-              localStorage.setItem('accessWidget_fontSize', fontSize);
-            }
+            if (cfg.persistPrefs) lsSet('accessWidget_fontSize', String(fontSize));
           }
         });
 
         btnReset.addEventListener('click', function () {
           fontSize = cfg.fontSizeDefault;
-          label.textContent = fontSize + '%';
+          sizeLabel.textContent = fontSize + '%';
           applyFontSize(fontSize);
-          if (cfg.persistPrefs) {
-            localStorage.setItem('accessWidget_fontSize', fontSize);
-          }
+          if (cfg.persistPrefs) lsSet('accessWidget_fontSize', String(fontSize));
         });
       }
 
-      // ── Dark mode listener ────────────────────────────────────────────────────
+      // ── Dark mode listener ───────────────────────────────────────────────────
 
       if (cfg.enableDarkMode) {
-        var btnDark = widget.querySelector('.access-widget__btn--darkmode');
-
         btnDark.addEventListener('click', function () {
           darkMode = !darkMode;
-          document.documentElement.classList.toggle('dark-mode', darkMode);
-          document.body.classList.toggle('dark-mode', darkMode);
+          applyDarkMode(darkMode);
           btnDark.setAttribute('aria-pressed', String(darkMode));
-          if (cfg.persistPrefs) {
-            localStorage.setItem('accessWidget_darkMode', String(darkMode));
-          }
+          if (cfg.persistPrefs) lsSet('accessWidget_darkMode', String(darkMode));
         });
 
         // Keep in sync when OS preference changes (only if no saved preference).
         if (cfg.darkModeDefault === 'system' && !cfg.persistPrefs) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
             darkMode = e.matches;
-            document.documentElement.classList.toggle('dark-mode', darkMode);
-            document.body.classList.toggle('dark-mode', darkMode);
+            applyDarkMode(darkMode);
             btnDark.setAttribute('aria-pressed', String(darkMode));
           });
         }

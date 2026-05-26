@@ -5,14 +5,17 @@
  * Access Widget module — font size and dark mode accessibility toolbar.
  */
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_help().
  */
 function access_widget_help($route_name, RouteMatchInterface $route_match) {
   if ($route_name === 'help.page.access_widget') {
-    return '<p>' . t('The Access Widget module provides a configurable accessibility toolbar for font size adjustment and dark mode toggle. Configure it at <a href=":url">Administration &rsaquo; Configuration &rsaquo; User interface &rsaquo; Access Widget</a>.', [':url' => \Drupal::url('access_widget.settings')]) . '</p>';
+    $url = Url::fromRoute('access_widget.settings')->toString();
+    return '<p>' . t('The Access Widget module provides a configurable accessibility toolbar for font size adjustment and dark mode toggle. Configure it at <a href=":url">Administration &rsaquo; Configuration &rsaquo; User interface &rsaquo; Access Widget</a>.', [':url' => $url]) . '</p>';
   }
 }
 
@@ -46,17 +49,7 @@ function access_widget_page_attachments(array &$attachments) {
     'persistPrefs'      => (bool) $config->get('persist_preferences'),
   ];
 
-  // Inject an early inline script to apply saved dark mode before paint (prevents flash).
-  if ($config->get('enable_dark_mode') && $config->get('persist_preferences')) {
-    $nofouc = "(function(){var v=localStorage.getItem('accessWidget_darkMode');if(v==='true'){document.documentElement.classList.add('dark-mode');document.addEventListener('DOMContentLoaded',function(){document.body.classList.add('dark-mode');});}})();";
-    $attachments['#attached']['html_head'][] = [
-      [
-        '#type'       => 'html_tag',
-        '#tag'        => 'script',
-        '#value'      => $nofouc,
-        '#attributes' => ['data-access-widget' => 'nofouc'],
-      ],
-      'access_widget_nofouc',
-    ];
-  }
+  // Tag the page with the config's cache tags so anonymous page caches and
+  // CDN responses are invalidated when an admin saves new settings.
+  CacheableMetadata::createFromObject($config)->applyTo($attachments);
 }

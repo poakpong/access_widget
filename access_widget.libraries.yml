@@ -1,9 +1,10 @@
 access_widget:
-  version: 1.0.3
+  version: 1.0.4
   css:
     theme:
       css/access_widget.css: {}
   js:
+    js/access_widget-nofouc.js: { header: true, weight: -10 }
     js/access_widget.js: {}
   dependencies:
     - core/drupal
