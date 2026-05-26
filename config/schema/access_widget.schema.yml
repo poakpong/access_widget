@@ -1,0 +1,40 @@
+access_widget.settings:
+  type: config_object
+  label: 'Access Widget settings'
+  mapping:
+    position:
+      type: string
+      label: 'Widget position'
+    offset_x:
+      type: integer
+      label: 'Horizontal offset (px)'
+    offset_y:
+      type: integer
+      label: 'Vertical offset (px)'
+    enable_font_size:
+      type: boolean
+      label: 'Enable font size controls'
+    font_size_default:
+      type: integer
+      label: 'Default font size (%)'
+    font_size_min:
+      type: integer
+      label: 'Minimum font size (%)'
+    font_size_max:
+      type: integer
+      label: 'Maximum font size (%)'
+    font_size_step:
+      type: integer
+      label: 'Font size step (%)'
+    enable_dark_mode:
+      type: boolean
+      label: 'Enable dark mode toggle'
+    dark_mode_default:
+      type: string
+      label: 'Default dark mode setting'
+    persist_preferences:
+      type: boolean
+      label: 'Persist user preferences in localStorage'
+    hide_on_admin:
+      type: boolean
+      label: 'Hide widget on administration pages'

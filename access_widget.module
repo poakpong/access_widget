@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Access Widget module — font size and dark mode accessibility toolbar.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function access_widget_help($route_name, RouteMatchInterface $route_match) {
+  if ($route_name === 'help.page.access_widget') {
+    return '<p>' . t('The Access Widget module provides a configurable accessibility toolbar for font size adjustment and dark mode toggle. Configure it at <a href=":url">Administration &rsaquo; Configuration &rsaquo; User interface &rsaquo; Access Widget</a>.', [':url' => \Drupal::url('access_widget.settings')]) . '</p>';
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function access_widget_page_attachments(array &$attachments) {
+  $config = \Drupal::config('access_widget.settings');
+
+  // Skip admin pages if configured.
+  if ($config->get('hide_on_admin')) {
+    $is_admin = \Drupal::service('router.admin_context')->isAdminRoute();
+    if ($is_admin) {
+      return;
+    }
+  }
+
+  $attachments['#attached']['library'][] = 'access_widget/access_widget';
+
+  $attachments['#attached']['drupalSettings']['accessWidget'] = [
+    'position'          => $config->get('position') ?: 'top-left',
+    'offsetX'           => (int) ($config->get('offset_x') ?? 20),
+    'offsetY'           => (int) ($config->get('offset_y') ?? 20),
+    'enableFontSize'    => (bool) $config->get('enable_font_size'),
+    'fontSizeDefault'   => (int) ($config->get('font_size_default') ?? 100),
+    'fontSizeMin'       => (int) ($config->get('font_size_min') ?? 80),
+    'fontSizeMax'       => (int) ($config->get('font_size_max') ?? 130),
+    'fontSizeStep'      => (int) ($config->get('font_size_step') ?? 10),
+    'enableDarkMode'    => (bool) $config->get('enable_dark_mode'),
+    'darkModeDefault'   => $config->get('dark_mode_default') ?: 'light',
+    'persistPrefs'      => (bool) $config->get('persist_preferences'),
+  ];
+
+  // Inject an early inline script to apply saved dark mode before paint (prevents flash).
+  if ($config->get('enable_dark_mode') && $config->get('persist_preferences')) {
+    $nofouc = "(function(){var v=localStorage.getItem('accessWidget_darkMode');if(v==='true'){document.documentElement.setAttribute('data-access-widget-theme','dark');}})();";
+    $attachments['#attached']['html_head'][] = [
+      [
+        '#type'       => 'html_tag',
+        '#tag'        => 'script',
+        '#value'      => $nofouc,
+        '#attributes' => ['data-access-widget' => 'nofouc'],
+      ],
+      'access_widget_nofouc',
+    ];
+  }
+}

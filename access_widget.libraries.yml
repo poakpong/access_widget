@@ -1,0 +1,10 @@
+access_widget:
+  version: 1.0.0
+  css:
+    theme:
+      css/access_widget.css: {}
+  js:
+    js/access_widget.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings

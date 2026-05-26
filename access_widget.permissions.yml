@@ -1,0 +1,4 @@
+administer access widget:
+  title: 'Administer Access Widget'
+  description: 'Configure the Access Widget module settings.'
+  restrict access: true

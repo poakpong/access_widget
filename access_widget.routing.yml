@@ -1,0 +1,7 @@
+access_widget.settings:
+  path: '/admin/config/user-interface/access-widget'
+  defaults:
+    _form: '\Drupal\access_widget\Form\AccessWidgetSettingsForm'
+    _title: 'Access Widget Settings'
+  requirements:
+    _permission: 'administer access widget'

@@ -1,0 +1,12 @@
+position: top-left
+offset_x: 20
+offset_y: 20
+enable_font_size: true
+font_size_default: 100
+font_size_min: 80
+font_size_max: 130
+font_size_step: 10
+enable_dark_mode: true
+dark_mode_default: light
+persist_preferences: true
+hide_on_admin: true
