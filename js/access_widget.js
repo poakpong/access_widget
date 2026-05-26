@@ -181,10 +181,10 @@
 
       function applyDarkMode(isDark) {
         if (isDark) {
-          document.documentElement.setAttribute('data-access-widget-theme', 'dark');
+          document.body.classList.add('dark-mode');
         }
         else {
-          document.documentElement.removeAttribute('data-access-widget-theme');
+          document.body.classList.remove('dark-mode');
         }
       }
     }

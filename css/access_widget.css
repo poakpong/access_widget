@@ -20,7 +20,7 @@
 }
 
 /* Dark mode tokens — set via data attribute on <html> */
-[data-access-widget-theme="dark"] {
+body.dark-mode {
   --aw-bg:        #2a2a2a;
   --aw-text:      #eeeeee;
   --aw-border:    #555555;
@@ -165,5 +165,5 @@
 #access-widget .access-widget__icon--sun  { display: inline; }
 #access-widget .access-widget__icon--moon { display: none;   }
 
-[data-access-widget-theme="dark"] #access-widget .access-widget__icon--sun  { display: none;   }
-[data-access-widget-theme="dark"] #access-widget .access-widget__icon--moon { display: inline; }
+body.dark-mode #access-widget .access-widget__icon--sun  { display: none;   }
+body.dark-mode #access-widget .access-widget__icon--moon { display: inline; }
