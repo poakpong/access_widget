@@ -39,7 +39,8 @@
       }
 
       function applyDarkMode(isDark) {
-        body.classList.toggle('dark-mode', isDark);
+        document.documentElement.classList.toggle('dark-mode', isDark);
+        document.body.classList.toggle('dark-mode', isDark);
       }
 
       // ── Resolve initial values ──────────────────────────────────────────────
@@ -172,7 +173,8 @@
 
         btnDark.addEventListener('click', function () {
           darkMode = !darkMode;
-          body.classList.toggle('dark-mode', darkMode);
+          document.documentElement.classList.toggle('dark-mode', darkMode);
+          document.body.classList.toggle('dark-mode', darkMode);
           btnDark.setAttribute('aria-pressed', String(darkMode));
           if (cfg.persistPrefs) {
             localStorage.setItem('accessWidget_darkMode', String(darkMode));
