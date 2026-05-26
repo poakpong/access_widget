@@ -3,5 +3,5 @@ type: module
 description: 'Configurable accessibility widget for font size adjustment and dark mode toggle, with admin settings for position and behavior.'
 package: Custom
 core_version_requirement: ^10 || ^11
-version: 1.0.0
+version: 1.0.1
 configure: access_widget.settings

@@ -148,14 +148,23 @@
       // ── Collapse / Expand ─────────────────────────────────────────────────────
 
       var trigger  = widget.querySelector('.access-widget__trigger');
+      var panel    = widget.querySelector('.access-widget__panel');
       var btnClose = widget.querySelector('.access-widget__btn--close');
 
+      // Set initial state explicitly — bypasses any CSS specificity conflicts.
+      trigger.style.display = 'flex';
+      panel.style.display   = 'none';
+
       trigger.addEventListener('click', function () {
+        trigger.style.display = 'none';
+        panel.style.display   = 'flex';
         widget.classList.add('is-open');
         trigger.setAttribute('aria-expanded', 'true');
       });
 
       btnClose.addEventListener('click', function () {
+        panel.style.display   = 'none';
+        trigger.style.display = 'flex';
         widget.classList.remove('is-open');
         trigger.setAttribute('aria-expanded', 'false');
       });
