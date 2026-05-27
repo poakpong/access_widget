@@ -115,12 +115,17 @@
 
       // ── Build trigger (collapsed state) ───────────────────────────────────────
 
-      var trigger = makeBtn('access-widget__trigger', 'A+', {
+      var trigger = makeBtn('access-widget__trigger', null, {
         'aria-label':    Drupal.t('Open accessibility controls'),
         'aria-expanded': 'false',
         'aria-controls': 'access-widget-panel',
         'title':         Drupal.t('Accessibility controls')
       });
+      // Two baseline-aligned "A"s — small then large, both aria-hidden.
+      var triggerLabel = el('span', 'access-widget__trigger-label', { 'aria-hidden': 'true' });
+      triggerLabel.appendChild(makeSpan('access-widget__trigger-a--sm', 'A'));
+      triggerLabel.appendChild(makeSpan('access-widget__trigger-a--lg', 'A'));
+      trigger.appendChild(triggerLabel);
 
       // ── Build panel (expanded state) ──────────────────────────────────────────
 

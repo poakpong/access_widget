@@ -83,6 +83,17 @@ body.dark-mode {
   outline-offset: 3px;
 }
 
+/* "AA" label — two baseline-aligned letters inside the trigger */
+.access-widget__trigger-label {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.access-widget__trigger-a--sm { font-size: 8px;  font-weight: 700; }
+.access-widget__trigger-a--lg { font-size: 14px; font-weight: 700; }
+
 /* Hide trigger when panel is open */
 #access-widget.is-open .access-widget__trigger {
   display: none;
